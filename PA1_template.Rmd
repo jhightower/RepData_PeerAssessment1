@@ -11,7 +11,7 @@ ds$date <- as.Date(ds$date,"%Y-%m-%d")
 Histogram of the total number of steps take each day:
 ```{r}
 stepsGroupByDay <- aggregate(steps ~ date, data = ds, sum ,na.rm = TRUE)
-hist(stepsGroupByDay$steps)
+hist(stepsGroupByDay$steps, main = 'Total Number Of Steps Per Day')
 ```
 
 ## What is mean total number of steps taken per day?
@@ -45,7 +45,7 @@ summary(stepsGroupByDay2$steps)
 ## Are there differences in activity patterns between weekdays and weekends?
 ```{r}
 weekdays <- weekdays(ds_filled_na$date)
-ds_filled_na$weekdays <- ifelse(weekdays == "sunday" | weekdays == "saturday","Weekend", "Weekday")
+ds_filled_na$weekdays <- ifelse(weekdays == "Sunday" | weekdays == "Saturday","Weekend", "Weekday")
 
 stepsByWeek <- aggregate(ds_filled_na$steps, by=list(ds_filled_na$interval,ds_filled_na$weekdays),mean)
 
