@@ -1,153 +1,88 @@
 # Reproducible Research: Peer Assessment 1
 
+Peer Assessment 1
+=================
 
 ## Loading and preprocessing the data
 
-
 ```r
 unzip(zipfile="activity.zip")
-data <- read.csv("activity.csv")
+ds <- read.csv("activity.csv")
+ds$date <- as.Date(ds$date,"%Y-%m-%d")
 ```
+
+Histogram of the total number of steps take each day:
+
+```r
+stepsGroupByDay <- aggregate(steps ~ date, data = ds, sum ,na.rm = TRUE)
+hist(stepsGroupByDay$steps, main = 'Total Number Of Steps Per Day')
+```
+
+![](PA1_template_files/figure-html/unnamed-chunk-2-1.png) 
 
 ## What is mean total number of steps taken per day?
 
-
-
 ```r
-totalNumberOFSteps <- tapply(data$steps, data$date, sum, na.rm=TRUE)
-hist(totalNumberOFSteps, xlab="total number of steps taken each day")
-```
-
-![](PA1_template_files/figure-html/StepsEachDay-1.png) 
-
-### mean
-
-
-```r
-mean(totalNumberOFSteps, na.rm=TRUE)
+summary(stepsGroupByDay$steps)
 ```
 
 ```
-## [1] 9354.23
-```
-
-### median
-
-
-```r
-median(totalNumberOFSteps, na.rm=TRUE)
-```
-
-```
-## [1] 10395
+##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+##      41    8841   10760   10770   13290   21190
 ```
 
 ## What is the average daily activity pattern?
-  Here is the average number of steps by 5-minute interval.
-
 
 ```r
-averages <- tapply(data$steps, data$interval, mean, na.rm=TRUE)
-
-plot (names(averages), averages, type="l",
-      main="Plot of the average number of steps",
-      xlab="5-minute interval",
-      ylab="average number of steps")
+stepsPerInterval <- aggregate(steps ~ interval, data = ds, mean, na.rm = TRUE)
+plot(steps~interval,data=stepsPerInterval,type="l")
 ```
 
-![](PA1_template_files/figure-html/PlotOfAverageStteps-1.png) 
+![](PA1_template_files/figure-html/unnamed-chunk-4-1.png) 
 
-The 5-minute interval which contains maximum number of steps is as
-follows.
-
+## Inputing missing values
 
 ```r
-as.numeric(names(which.max(averages)))
-```
-
-```
-## [1] 835
-```
-
-## Imputing missing values
-
-The total number of missing values in the dataset is,
-
-
-```r
-sum(is.na(data))
+missing <- !complete.cases(ds)
+sum(missing == TRUE)
 ```
 
 ```
 ## [1] 2304
 ```
 
-The strategy for filling in all of the missing values in the dataset
-is,
+```r
+ds2 <- ds[missing == TRUE,]
+ds2[,1] <- stepsPerInterval$step
 
- - use the mean for that 5-minute interval.
+ds_filled_na <- rbind(ds[complete.cases(ds),], ds2)
 
-By using this strategy, I crate a new dataset with the missing data
-filled in.
+stepsGroupByDay2 <- aggregate(steps ~ date, data = ds_filled_na, sum)
+hist(stepsGroupByDay2$steps)
+```
 
+![](PA1_template_files/figure-html/unnamed-chunk-5-1.png) 
 
 ```r
-dataNoNA <- data
-
-for (i in which(is.na(dataNoNA))) {
-    dataNoNA[i,1] <- averages[((i-1)%%288)+1]
-}
-```
-
-### New Histogram
-
-  This is a new  histogram that shows total number of steps taken each day.
-
-
-```r
-total.steps <- tapply(dataNoNA$steps, dataNoNA$date, sum, na.rm=TRUE)
-hist(total.steps, xlab="total number of steps taken each day")
-```
-
-![](PA1_template_files/figure-html/StepsEachDayNoNA-1.png) 
-
-### mean
-
-
-```r
-mean(total.steps, na.rm=TRUE)
+summary(stepsGroupByDay2$steps)
 ```
 
 ```
-## [1] 10766.19
+##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+##      41    9819   10770   10770   12810   21190
 ```
-
-### median
-
-
-```r
-median(total.steps, na.rm=TRUE)
-```
-
-```
-## [1] 10766.19
-```
-
-### analysis
-- The value for mean in my new file is not the same in as the original.
-- The median for my new file is the same as the original.
 
 ## Are there differences in activity patterns between weekdays and weekends?
 
+```r
 weekdays <- weekdays(ds_filled_na$date)
-ds_filled_na$weekdays <- ifelse(weekdays == "sunday" | weekdays == "saturday", 
-    "Weekend", "Weekday")
+ds_filled_na$weekdays <- ifelse(weekdays == "Sunday" | weekdays == "Saturday","Weekend", "Weekday")
 
-steps_per_week <- aggregate(ds_filled_na$steps, by = list(ds_filled_na$interval, 
-    ds_filled_na$weekdays), mean)
+stepsByWeek <- aggregate(ds_filled_na$steps, by=list(ds_filled_na$interval,ds_filled_na$weekdays),mean)
 
-names(steps_per_week) <- c("interval", "weekdays", "steps")
+names(stepsByWeek) <- c("interval","weekdays","steps")
 library(lattice)
-xyplot(steps ~ interval | weekdays, steps_per_week, type = "l", layout = c(1, 
-    2), xlab = "Interval", ylab = "Number of steps", main = "Activity Patterns on Weekends and Weekdays", 
-    col = "steelblue")
+xyplot(steps ~ interval | weekdays, stepsByWeek, type="l",layout=c(1,2), xlab="Interval", ylab = "Number of steps", main="Activity Patterns on Weekends and Weekdays", col = "steelblue")
+```
+
+![](PA1_template_files/figure-html/unnamed-chunk-6-1.png) 
